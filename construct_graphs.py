@@ -45,9 +45,10 @@ def construct_mutual_follow_json_d3(am_data, follows):
     data = {"nodes": [], "links": []}
     for am in am_data:
         data["nodes"].append({
-            "id": am["name"],
+            "id": am["twitter"],
+            "name": am["name"],
             "twitter": am["twitter"],
-            "party": am["twitter"],
+            "party": am["party"],
             "colour": get_colour(am)
         })
     for am1 in sorted(follows.keys()):
