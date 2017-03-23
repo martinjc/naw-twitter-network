@@ -16,55 +16,49 @@
 
 import os
 import json
-import networkx as nx
-import matplotlib.pyplot as plt
-
 from itertools import combinations
-from networkx.readwrite import json_graph
 
 from construct_follow_matrix import construct_follow_matrix
 from construct_mention_matrix import construct_mention_matrix
 from utils import *
 
 
-def output_graph(G, file_path):
-    json_data = json_graph.node_link_data(G)
-    json.dump(json_data, file_path)
+def get_colour(am):
+    if am["party"] == "Labour":
+        return "#dc241f"
+    elif am["party"] == "Conservative":
+        return "#0087DC"
+    elif am["party"] == "Liberal Democrat":
+        return "#fdbb30"
+    elif am["party"] == "Plaid Cymru":
+        return "#008142"
+    elif am["party"] == "UKIP":
+        return "#70147a"
+    elif am["party"] == "Independent":
+        return "#eeeeee"
+    else:
+        return None
 
 
-def add_nodes(am_data, G):
-    for i, am in enumerate(am_data):
-        if am["party"] == "Labour":
-            colour = "#dc241f"
-        elif am["party"] == "Conservative":
-            colour = "#0087DC"
-        elif am["party"] == "Liberal Democrat":
-            colour = "#fdbb30"
-        elif am["party"] == "Plaid Cymru":
-            colour = "#008142"
-        elif am["party"] == "UKIP":
-            colour = "#70147a"
-        elif am["party"] == "Independent":
-            colour = "#eeeeee"
-        else:
-            print(am)
+def construct_mutual_follow_json_d3(am_data, follows):
 
-        G.add_node(am["twitter"], name=am["name"], twitter=am["twitter"], party=am["party"], colour=colour)
-    return G
-
-
-def construct_mutual_follow_graph(am_data, follows):
-
-    G = nx.Graph()
-
-    G = add_nodes(am_data, G)
-
+    data = {"nodes": [], "links": []}
+    for am in am_data:
+        data["nodes"].append({
+            "id": am["name"],
+            "twitter": am["twitter"],
+            "party": am["twitter"],
+            "colour": get_colour(am)
+        })
     for am1 in sorted(follows.keys()):
         for am2 in sorted(follows.keys()):
             if follows[am1][am2] == 1 and follows[am2][am1] == 1:
-                G.add_edge(am1, am2)
+                data["links"].append({
+                    "source": am1,
+                    "target": am2
+                })
 
-    return G
+    return data
 
 
 if __name__ == "__main__":
@@ -76,13 +70,10 @@ if __name__ == "__main__":
     # read in the AM data
     am_data = read_am_data()
 
-    mentions_matrix = construct_mention_matrix()
+    #mentions_matrix = construct_mention_matrix()
     follow_matrix = construct_follow_matrix()
 
-    graph = construct_mutual_follow_graph(am_data, follow_matrix)
+    d3_json = construct_mutual_follow_json_d3(am_data, follow_matrix)
 
-    with open(os.path.join(graph_dir, "mutual_follow_graph.gml"), "w") as gml_file:
-        nx.write_graphml(graph, gml_file)
-
-    with open(os.path.join(graph_dir, "mutual_follow_graph.json"), "w") as json_file:
-        output_graph(graph, json_file)
+    with open(os.path.join(graph_dir, "mutual_follow_graph_d3.json"), "w") as json_file:
+        json.dump(d3_json, json_file)
