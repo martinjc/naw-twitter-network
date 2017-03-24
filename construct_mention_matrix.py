@@ -9,6 +9,23 @@ import json
 from file_cache import JSONFileCache
 from utils import *
 
+def get_colour(am):
+    if am["party"] == "Labour":
+        return "#dc241f"
+    elif am["party"] == "Conservative":
+        return "#0087DC"
+    elif am["party"] == "Liberal Democrat":
+        return "#fdbb30"
+    elif am["party"] == "Plaid Cymru":
+        return "#008142"
+    elif am["party"] == "UKIP":
+        return "#70147a"
+    elif am["party"] == "Independent":
+        return "#eeeeee"
+    else:
+        return None
+
+
 def construct_mention_matrix():
     # load the AM data from the csv
     am_data = read_am_data()
@@ -39,6 +56,30 @@ def construct_mention_matrix():
 
     return mention_matrix
 
+def construct_mention_json_d3(mention_matrix):
+
+    # load the AM data from the csv
+    am_data = read_am_data()
+
+    data = {"nodes": [], "links": []}
+    for am in am_data:
+        data["nodes"].append({
+            "id": am["twitter"],
+            "name": am["name"],
+            "twitter": am["twitter"],
+            "party": am["party"],
+            "colour": get_colour(am)
+        })
+    for am1 in sorted(mention_matrix.keys()):
+        for am2 in sorted(mention_matrix.keys()):
+            data["links"].append({
+                "source": am1,
+                "target": am2,
+                "value": mention_matrix[am1][am2]
+                })
+
+        return data
+
 
 if __name__ == "__main__":
 
@@ -48,6 +89,7 @@ if __name__ == "__main__":
         am_parties[am["twitter"]] = am["party"]
 
     mention_matrix = construct_mention_matrix()
+    mention_network = construct_mention_json_d3(mention_matrix)
 
     cwd = os.getcwd()
     data_dir = os.path.join(cwd, "data")
@@ -70,3 +112,6 @@ if __name__ == "__main__":
             for am2 in sorted(mention_matrix.keys()):
                 if am1 != am2 and mention_matrix[am1][am2] != 0:
                     output_file.write("%s,%s,%d,%s\n" % (am1, am2, mention_matrix[am1][am2], am_parties[am1]))
+
+    with open(os.path.join(data_dir, "mention_network.json"), "w") as output_file:
+        json.dump(mention_network, output_file)

@@ -51,16 +51,39 @@ def construct_mutual_follow_json_d3(am_data, follows):
             "party": am["party"],
             "colour": get_colour(am)
         })
+    complete = [];
     for am1 in sorted(follows.keys()):
         for am2 in sorted(follows.keys()):
-            if follows[am1][am2] == 1 and follows[am2][am1] == 1:
+            if am2 not in complete:
+                if follows[am1][am2] == 1 and follows[am2][am1] == 1:
+                    data["links"].append({
+                        "source": am1,
+                        "target": am2
+                    })
+        complete.append(am1)
+
+    return data
+
+def construct_follow_json_d3(am_data, follows):
+
+    data = {"nodes": [], "links": []}
+    for am in am_data:
+        data["nodes"].append({
+            "id": am["twitter"],
+            "name": am["name"],
+            "twitter": am["twitter"],
+            "party": am["party"],
+            "colour": get_colour(am)
+        })
+    for am1 in sorted(follows.keys()):
+        for am2 in sorted(follows.keys()):
+            if follows[am1][am2] == 1:
                 data["links"].append({
                     "source": am1,
                     "target": am2
                 })
 
     return data
-
 
 if __name__ == "__main__":
 
@@ -74,7 +97,7 @@ if __name__ == "__main__":
     #mentions_matrix = construct_mention_matrix()
     follow_matrix = construct_follow_matrix()
 
-    d3_json = construct_mutual_follow_json_d3(am_data, follow_matrix)
+    d3_json = construct_follow_json_d3(am_data, follow_matrix)
 
-    with open(os.path.join(graph_dir, "mutual_follow_graph_d3.json"), "w") as json_file:
+    with open(os.path.join(graph_dir, "follow_graph_d3.json"), "w") as json_file:
         json.dump(d3_json, json_file)
